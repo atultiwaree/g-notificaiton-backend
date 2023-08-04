@@ -13,45 +13,50 @@ app.use(express.urlencoded({ extended: false }));
 
 app.get("/", (req, res) => res.status(200).json({ status: "Working fine!" }));
 
-const FCM = require("fcm-node");
-var serverKey = "AAAA35WKSbM:APA91bHrVepH1-K1jGHZl19QktCVMxlZkm2cfUiGOsWW90fZPN_pWZzyiwjuDE0u6x1l6MWIm1PxfYNkGpel4yYzT8nJRLu66XNH5gbfxOk6266ZMQEMl5JvjEmQLlKDsSbD2qQle7Y5"; //put your server key here
-var fcm = new FCM(serverKey);
+const admin = require("firebase-admin");
 
-let randCollKey = Math.random();
+var serviceAccount = require("./services.json");
 
-var message = {
-  //this may vary according to the message type (single recipient, multicast, topic, et cetera)
-  to: "eS811YQUTdCbXdC1Yopymo:APA91bFw7ZJbn7n8ZMekxZ6C4xTJWNjN88vGoftGpKwgsnnpM0MT1HJEBLxeBrMZNc1c4NK5R1zjk5c5MM4YZLloTeu1XMI5F5RVk2GxGzsjYMixQa27eWNjIs3ei-bfcTrq5uLrcQvK",
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+});
 
-  android: {
-    collapse_key: "key",
-  },
-
-  collapse_key: "key",
-  notification: {
-    body: "Body of your push notification",
-    id: "lbu",
-    collapse_key: "key",
-    tag: "tag4",
-    image: "https://avatars.githubusercontent.com/u/93477615?s=400&u=e97c61f6666640ff095937470007d60c5e625fc7&v=4",
-  },
-
-  data: {
-    //you can send only notification or only data(or include both)
-    my_key: "my value",
-    my_another_key: "my another value",
+const notifiPayload = {
+  channel: "message",
+  content: {
+    name: "atul",
+    roomId: "123",
+    title: "Simran sent you messge",
+    body: "Hi! Atul What's up ?",
   },
 };
 
-for (x = 0; x < 1; x++) {
-  fcm.send(message, function (err, response) {
-    if (err) {
-      console.log("Something has gone wrong!");
-    } else {
-      console.log("Successfully sent with response: ", response);
-    }
+/**
+ * @Refered_to_this_issue
+ * https://github.com/firebase/quickstart-android/issues/1007#issue-530932763
+ */
+
+const message = {
+  token: "daPlw4LESOS13uz1qcL7Ud:APA91bF47E7pX5F3EA6NLNTrqklurvyFoD1dmmx0iAo5BPyEBVkbu4ufftRy9MyD6DRsZwU4rPDBVazADf1EXMsPgFF6KzSifQsJ7-sL3TwbKLHT_O6fLFyjYSXFdFhvB60BQGaz4j4e",
+  android: {
+    priority: "high",
+    ttl: 2419200,
+    restrictedPackageName: "com.newnot",
+    data: {
+      payload: JSON.stringify(notifiPayload),
+    },
+  },
+};
+
+admin
+  .messaging()
+  .send(message)
+  .then((response) => {
+    console.log("Successfully sent message:", response);
+  })
+  .catch((error) => {
+    console.log("Error sending message:", error);
   });
-}
 
 //mongoose.connect(process.env.MONGO_URL, () => console.log(msgConstants.mongoStarted));
 server.listen(PORT, (err) => (!err ? console.log(`✔ Node Listening to http://localhost:${PORT}`) : console.log("There was some error ", err.message)));
